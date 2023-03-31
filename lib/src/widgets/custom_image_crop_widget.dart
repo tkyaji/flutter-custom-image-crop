@@ -222,9 +222,6 @@ class _CustomImageCropState extends State<CustomImageCrop>
     );
 
     if (_dataTransitionStart != null) {
-      double sc = data.scale + (_cropImageData.scale - _dataTransitionStart!.scale);
-      if (sc < 1.0) _cropImageData.scale = _dataTransitionStart!.scale;
-
       addTransition(_dataTransitionStart! - _cropImageData);
     }
     _dataTransitionStart = _cropImageData;
@@ -316,7 +313,7 @@ class _CustomImageCropState extends State<CustomImageCrop>
       // that with the crop path that the resulting path
       // overlap the hole (crop). So we check if all pixels
       // from the crop contain pixels from the original image
-      data.scale = data.scale.clamp(0.1, 10.0);
+      data.scale = data.scale.clamp(1.0, 10.0);
 
       double w = _imageAsUIImage!.width * _defaultScale * data.scale;
       double h = _imageAsUIImage!.height * _defaultScale * data.scale;
