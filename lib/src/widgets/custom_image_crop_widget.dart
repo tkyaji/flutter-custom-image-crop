@@ -107,6 +107,8 @@ class _CustomImageCropState extends State<CustomImageCrop>
   ui.Image? _imageAsUIImage;
   ImageStream? _imageStream;
   ImageStreamListener? _imageListener;
+  late double _defaultScale;
+  late double _cropWidth;
 
   @override
   void initState() {
@@ -159,10 +161,10 @@ class _CustomImageCropState extends State<CustomImageCrop>
       builder: (context, constraints) {
         _width = constraints.maxWidth;
         _height = constraints.maxHeight;
-        final cropWidth = min(_width, _height) * widget.cropPercentage;
-        final defaultScale = cropWidth / max(image.width, image.height);
-        final scale = data.scale * defaultScale;
-        _path = _getPath(cropWidth, _width, _height);
+        _cropWidth = min(_width, _height) * widget.cropPercentage;
+        _defaultScale = _cropWidth / min(image.width, image.height);
+        final scale = data.scale * _defaultScale;
+        _path = _getPath(_cropWidth, _width, _height);
         return XGestureDetector(
           onMoveStart: onMoveStart,
           onMoveUpdate: onMoveUpdate,
@@ -209,24 +211,23 @@ class _CustomImageCropState extends State<CustomImageCrop>
   }
 
   void onScaleUpdate(ScaleEvent event) {
-    final scale =
+    var scale =
         widget.canScale ? event.scale : (_dataTransitionStart?.scale ?? 1.0);
 
     final angle = widget.canRotate ? event.rotationAngle : 0.0;
 
-    if (_dataTransitionStart != null) {
-      addTransition(
-        _dataTransitionStart! -
-            CropImageData(
-              scale: scale,
-              angle: angle,
-            ),
-      );
-    }
-    _dataTransitionStart = CropImageData(
+    final _cropImageData = CropImageData(
       scale: scale,
       angle: angle,
     );
+
+    if (_dataTransitionStart != null) {
+      double sc = data.scale + (_cropImageData.scale - _dataTransitionStart!.scale);
+      if (sc < 1.0) _cropImageData.scale = _dataTransitionStart!.scale;
+
+      addTransition(_dataTransitionStart! - _cropImageData);
+    }
+    _dataTransitionStart = _cropImageData;
   }
 
   void onMoveStart(_) {
@@ -316,6 +317,13 @@ class _CustomImageCropState extends State<CustomImageCrop>
       // overlap the hole (crop). So we check if all pixels
       // from the crop contain pixels from the original image
       data.scale = data.scale.clamp(0.1, 10.0);
+
+      double w = _imageAsUIImage!.width * _defaultScale * data.scale;
+      double h = _imageAsUIImage!.height * _defaultScale * data.scale;
+      double maxX = (w - _cropWidth) * 0.5;
+      double maxY = (h - _cropWidth) * 0.5;
+      data.x = data.x.clamp(-maxX, maxX);
+      data.y = data.y.clamp(-maxY, maxY);
     });
   }
 
