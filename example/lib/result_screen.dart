@@ -16,7 +16,9 @@ class ResultScreen extends StatelessWidget {
         title: const Text('Result'),
         systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
-      body: Center(
+      body: Container(
+        alignment: Alignment.center,
+        color: Colors.grey,
         child: Column(
           children: [
             const Spacer(),
